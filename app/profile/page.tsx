@@ -107,7 +107,9 @@ function ProfileContent() {
       if (!response.ok) throw new Error('Failed to cancel subscription');
       
       setIsCancelModalOpen(false);
-      router.refresh();
+      setTimeout(() => {
+        router.refresh();
+      }, 1000);
     } catch (error) {
       console.error('Error canceling subscription:', error);
     } finally {
@@ -129,7 +131,9 @@ function ProfileContent() {
       
       if (!response.ok) throw new Error('Failed to reactivate subscription');
       
-      router.refresh();
+      setTimeout(() => {
+        router.refresh();
+      }, 1000);
     } catch (error) {
       console.error('Error reactivating subscription:', error);
     }
