@@ -119,9 +119,41 @@ export function useSubscription() {
     [fetchSubscription, syncRetries]
   );
 
-  const syncWithStripe = useCallback((subscriptionId: string) => {
-    debouncedSyncWithStripe(subscriptionId);
-  }, [debouncedSyncWithStripe]);
+  // Add new immediate sync function
+  const immediateSyncWithStripe = useCallback(async (subscriptionId: string) => {
+    try {
+      const response = await fetch('/api/stripe/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscriptionId }),
+      });
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.details || 'Failed to sync with Stripe');
+      }
+      
+      // Clear cache to force a fresh fetch
+      if (user?.id) {
+        subscriptionCache.delete(user.id);
+      }
+      
+      return await fetchSubscription();
+    } catch (error) {
+      console.error('Error syncing with Stripe:', error);
+      setError(error instanceof Error ? error.message : 'Failed to sync with Stripe');
+      throw error;
+    }
+  }, [fetchSubscription, user?.id]);
+
+  const syncWithStripe = useCallback(async (subscriptionId: string, immediate: boolean = false) => {
+    if (immediate) {
+      return await immediateSyncWithStripe(subscriptionId);
+    } else {
+      debouncedSyncWithStripe(subscriptionId);
+      return undefined;
+    }
+  }, [debouncedSyncWithStripe, immediateSyncWithStripe]);
 
   useEffect(() => {
     if (!user) return;
@@ -170,9 +202,7 @@ export function useSubscription() {
     subscription,
     isLoading: loading,
     error,
-    syncWithStripe: useCallback((subscriptionId: string) => {
-      debouncedSyncWithStripe(subscriptionId);
-    }, [debouncedSyncWithStripe]),
-    fetchSubscription // Expose fetch function for manual refresh
+    syncWithStripe,
+    fetchSubscription
   };
 } 

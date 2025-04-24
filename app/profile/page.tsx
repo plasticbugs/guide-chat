@@ -107,7 +107,10 @@ function ProfileContent() {
       if (!response.ok) throw new Error('Failed to cancel subscription');
       
       setIsCancelModalOpen(false);
-      router.refresh();
+      // First sync with Stripe to get updated data
+      await syncWithStripe(subscription.stripe_subscription_id, true);
+      // Then fetch the updated subscription to refresh UI
+      await fetchSubscription();
     } catch (error) {
       console.error('Error canceling subscription:', error);
     } finally {
@@ -129,7 +132,10 @@ function ProfileContent() {
       
       if (!response.ok) throw new Error('Failed to reactivate subscription');
       
-      router.refresh();
+      // First sync with Stripe to get updated data
+      await syncWithStripe(subscription.stripe_subscription_id, true);
+      // Then fetch the updated subscription to refresh UI
+      await fetchSubscription();
     } catch (error) {
       console.error('Error reactivating subscription:', error);
     }
